@@ -1,0 +1,71 @@
+id,age,income,credit_score,employment_years,has_mortgage,num_accounts,num_loans,loan_amount,default,marital_status,education,city
+1,28,45000,650,3,0,2,1,15000,0,Single,Bachelor,New York
+2,35,75000,720,8,1,4,2,50000,0,Married,Master,Los Angeles
+3,42,85000,780,12,1,3,1,85000,0,Married,Bachelor,Chicago
+4,25,35000,580,1,0,1,0,5000,1,Single,High School,Houston
+5,38,65000,700,7,1,3,1,40000,0,Single,Bachelor,Phoenix
+6,31,55000,670,5,0,2,1,20000,0,Married,Bachelor,Philadelphia
+7,45,95000,800,15,1,5,2,120000,0,Married,Master,San Antonio
+8,29,48000,640,4,0,2,1,18000,0,Divorced,Bachelor,San Diego
+9,52,120000,820,20,1,6,3,200000,0,Married,Master,Dallas
+10,26,32000,560,0,0,1,0,0,1,Single,High School,San Jose
+11,39,72000,710,9,1,4,2,60000,0,Married,Bachelor,Austin
+12,41,88000,750,14,1,3,1,90000,0,Married,Bachelor,Jacksonville
+13,27,40000,600,2,0,1,1,12000,0,Single,High School,Fort Worth
+14,36,62000,680,6,1,3,1,35000,0,Single,Master,Columbus
+15,44,92000,790,13,1,4,2,110000,0,Married,Master,Charlotte
+16,30,50000,660,5,1,2,1,25000,0,Married,Bachelor,San Francisco
+17,48,105000,810,17,1,5,3,150000,0,Married,Master,Indianapolis
+18,22,28000,540,0,0,0,0,0,1,Single,High School,Austin
+19,43,90000,760,11,1,4,2,100000,0,Married,Master,Seattle
+20,32,58000,690,7,0,3,1,30000,0,Divorced,Bachelor,Denver
+21,50,115000,800,18,1,5,3,180000,0,Married,Master,Washington
+22,24,33000,570,1,0,1,0,8000,1,Single,High School,Boston
+23,37,68000,705,8,1,3,1,50000,0,Married,Bachelor,Memphis
+24,46,102000,795,16,1,4,2,140000,0,Married,Master,Baltimore
+25,28,42000,620,3,0,2,1,14000,0,Single,Bachelor,Louisville
+26,40,80000,740,10,1,4,2,80000,0,Married,Master,Portland
+27,33,60000,675,6,1,3,1,40000,0,Single,Bachelor,Las Vegas
+28,51,118000,815,19,1,5,3,190000,0,Married,Master,Milwaukee
+29,23,31000,555,0,0,0,0,0,1,Single,High School,Albuquerque
+30,42,86000,755,12,1,4,2,95000,0,Married,Bachelor,Tucson
+31,29,48000,640,4,0,2,1,16000,0,Single,Bachelor,Fresno
+32,38,72000,715,9,1,4,2,65000,0,Married,Master,Mesa
+33,45,95000,800,15,1,5,2,130000,0,Married,Bachelor,Sacramento
+34,26,38000,585,2,0,1,0,10000,0,Single,Bachelor,Atlanta
+35,41,84000,750,11,1,3,1,85000,0,Married,Master,Kansas City
+36,34,65000,700,8,1,3,2,55000,0,Divorced,Bachelor,Long Beach
+37,49,112000,810,18,1,5,3,170000,0,Married,Master,Fresno
+38,25,35000,575,1,0,1,0,6000,1,Single,High School,Sacramento
+39,43,89000,765,13,1,4,2,105000,0,Married,Bachelor,Oakland
+40,30,52000,665,5,1,2,1,28000,0,Married,Bachelor,Miami
+41,47,108000,805,17,1,5,3,160000,0,Married,Master,Tulsa
+42,27,44000,610,3,0,2,1,13000,0,Single,Bachelor,Cleveland
+43,39,75000,720,10,1,4,2,70000,0,Single,Master,Arlington
+44,44,91000,785,14,1,4,2,115000,0,Married,Bachelor,New Orleans
+45,32,56000,685,6,0,3,1,32000,0,Single,Bachelor,Plano
+46,51,120000,820,20,1,6,3,200000,0,Married,Master,Orlando
+47,28,46000,635,4,0,2,1,17000,0,Single,Bachelor,Chula Vista
+48,40,82000,745,11,1,4,2,88000,0,Married,Master,Irving
+49,36,64000,695,7,1,3,1,45000,0,Married,Bachelor,Tampa
+50,48,110000,815,19,1,5,3,180000,0,Married,Master,Saint Paul
+51,24,34000,580,1,0,1,0,7000,1,Single,High School,Anaheim
+52,42,87000,758,12,1,4,2,98000,0,Married,Bachelor,Aurora
+53,29,49000,645,4,0,2,1,18500,0,Single,Bachelor,Santa Ana
+54,44,93000,792,14,1,4,2,120000,0,Married,Master,Riverside
+55,31,54000,670,5,1,2,1,26000,0,Single,Bachelor,Lexington
+56,50,118000,818,19,1,5,3,195000,0,Married,Master,Corpus Christi
+57,26,39000,590,2,0,1,0,9500,0,Single,High School,Henderson
+58,41,85000,752,12,1,4,2,92000,0,Married,Master,Chandler
+59,35,68000,710,8,1,3,1,52000,0,Divorced,Bachelor,Laredo
+60,47,107000,808,17,1,5,3,165000,0,Married,Bachelor,Stockton
+61,27,43000,615,3,0,2,1,14500,0,Single,Bachelor,Saint Paul
+62,40,81000,742,10,1,4,2,85000,0,Married,Master,Fontana
+63,33,61000,680,6,1,3,1,42000,0,Single,Bachelor,Modesto
+64,49,113000,812,18,1,5,3,175000,0,Married,Master,Glendale
+65,22,29000,550,0,0,0,0,0,1,Single,High School,Winston-Salem
+66,38,70000,705,8,1,3,1,48000,0,Married,Bachelor,North Las Vegas
+67,44,90000,785,13,1,4,2,110000,0,Married,Master,Irving
+68,30,51000,660,5,1,2,1,24000,0,Married,Bachelor,Chesapeake
+69,,95000,800,16,1,4,2,135000,0,Married,Master,Garland
+70,46,104000,798,15,1,5,3,145000,0,Married,Bachelor,Gilbert

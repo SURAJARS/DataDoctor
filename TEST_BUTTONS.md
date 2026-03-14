@@ -1,0 +1,152 @@
+#!/bin/bash
+
+# DataDoctor Feature Testing Guide
+
+echo "================================"
+echo "DataDoctor Feature Testing Guide"
+echo "================================"
+echo ""
+
+echo "✓ Backend Status"
+echo " URL: http://localhost:8000"
+echo " Check with: curl http://localhost:8000/"
+echo ""
+
+echo "✓ Frontend Status"
+echo " URL: http://localhost:3000"
+echo " Browser: Open http://localhost:3000 in your browser"
+echo ""
+
+echo "========== TESTING WORKFLOW =========="
+echo ""
+
+echo "STEP 1: Upload Dataset"
+echo " • Go to http://localhost:3000"
+echo " • Click 'Upload Dataset' button"
+echo " • Select a CSV or Excel file"
+echo " • Click 'Analyze'"
+echo ""
+
+echo "STEP 2: View Dashboard"
+echo " • After analysis completes, Dashboard appears"
+echo " • You should see 6 colored action buttons at the top:"
+echo " ✨ Auto-Fix (Green)"
+echo " 📄 PDF Report (Blue)"
+echo " 📧 Email (Purple)"
+echo " ⚠️ Risk Score (Orange)"
+echo " 📈 Drift Check (Red)"
+echo " 🔧 Pipeline (Indigo)"
+echo ""
+
+echo "STEP 3: Test Individual Buttons"
+echo ""
+
+echo " 3a. Auto-Fix Button (Green)"
+echo " • Click ✨ Auto-Fix"
+echo " • Should show 'Processing...' loading state"
+echo " • Watch for green success notification"
+echo " • Should say: '✓ Dataset auto-fixed!'"
+echo ""
+
+echo " 3b. PDF Report Button (Blue)"
+echo " • Click 📄 PDF Report"
+echo " • Should show 'Loading...' state"
+echo " • Browser will download: report\_[analysis_id].pdf"
+echo " • Green notification: '✓ PDF report downloaded'"
+echo ""
+
+echo " 3c. Email Button (Purple)"
+echo " • Click 📧 Email"
+echo " • Prompt will ask for email address"
+echo " • Enter valid email (e.g., test@example.com)"
+echo " • Should show 'Loading...' state"
+echo " • Green notification: '✓ Report sent successfully'"
+echo ""
+
+echo " 3d. Risk Score Button (Orange)"
+echo " • Click ⚠️ Risk Score"
+echo " • Should show 'Assessing...' state"
+echo " • Alert shows: Risk Score: [number]/100"
+echo " • Green notification: '✓ Risk Score: [score]'"
+echo ""
+
+echo " 3e. Drift Check Button (Red)"
+echo " • Click 📈 Drift Check"
+echo " • Should show 'Checking...' state"
+echo " • Alert shows drift analysis result"
+echo " • Green notification: '✓ Drift analysis completed'"
+echo ""
+
+echo " 3f. Pipeline Button (Indigo)"
+echo " • Click 🔧 Pipeline"
+echo " • Should show 'Generating...' state"
+echo " • Alert shows pipeline code (first 500 chars)"
+echo " • Green notification: '✓ Pipeline code copied'"
+echo " • Code automatically copied to clipboard"
+echo ""
+
+echo "STEP 4: Visit Advanced Tab"
+echo " • Click 'Advanced' tab in Dashboard"
+echo " • See detailed explanations for each feature"
+echo " • Buttons in Advanced tab also functional:"
+echo " - 'Fix Now' button"
+echo " - 'Assess Risk' button"
+echo " - 'Check Drift' button"
+echo " - 'Generate' button"
+echo " - '📄 PDF' and '📧 Email' buttons"
+echo ""
+
+echo "========== ERROR HANDLING =========="
+echo ""
+
+echo "If you see RED error notifications:"
+echo ""
+
+echo "❌ 'Could not connect to backend'"
+echo " → Backend not running"
+echo " → Solution: Start backend on port 8000"
+echo " → Command: uvicorn backend.main:app --port 8000"
+echo ""
+
+echo "❌ 'Failed to fetch'"
+echo " → Network/CORS issue"
+echo " → Solution: Check CORS middleware in backend"
+echo ""
+
+echo "❌ 'Analysis not found'"
+echo " → Analysis ID not in cache"
+echo " → Solution: Re-run analysis"
+echo ""
+
+echo "========== DEBUGGING =========="
+echo ""
+
+echo "Browser Console:"
+echo " • Press F12 to open Developer Tools"
+echo " • Check Console tab for JavaScript errors"
+echo " • Check Network tab for API calls"
+echo ""
+
+echo "Backend Logs:"
+echo " • Terminal running backend shows INFO messages"
+echo " • Watch for POST/GET requests"
+echo " • Check for exceptions/tracebacks"
+echo ""
+
+echo "========== NOTIFICATION SYSTEM =========="
+echo ""
+
+echo "Colors & Meanings:"
+echo " 🟢 Green = Success (✓)"
+echo " 🔴 Red = Error (✗)"
+echo " 🔵 Blue = Info"
+echo " 🟡 Yellow = Warning"
+echo ""
+
+echo "Auto-dismiss after 4 seconds"
+echo "Bottom-right corner of screen"
+echo ""
+
+echo "================================"
+echo "Ready to test? Open http://localhost:3000"
+echo "================================"
