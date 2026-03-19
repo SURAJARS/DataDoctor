@@ -119,14 +119,25 @@ class AutoMLEngine:
         Returns:
             Results dictionary
         """
+        # Ensure we have enough data
+        min_test_samples = 10
+        actual_test_size = max(test_size, min_test_samples / len(X))
+        
         # Split data with stratification for classification to handle imbalanced classes
-        if self.problem_type == 'classification':
+        try:
+            if self.problem_type == 'classification':
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X, y, test_size=actual_test_size, random_state=random_state, 
+                    stratify=y, min_samples_leaf=2
+                )
+            else:
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X, y, test_size=actual_test_size, random_state=random_state
+                )
+        except Exception as e:
+            print(f"Stratification failed: {e}, using standard split")
             X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=test_size, random_state=random_state, stratify=y
-            )
-        else:
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=test_size, random_state=random_state
+                X, y, test_size=actual_test_size, random_state=random_state
             )
         
         # Train model
@@ -179,25 +190,47 @@ class AutoMLEngine:
         """Calculate classification metrics"""
         accuracy = accuracy_score(y_true, y_pred)
         
-        # Determine number of classes
-        unique_classes = len(np.unique(y_true))
+        # Determine number of classes in true labels and predictions
+        unique_true_classes = len(np.unique(y_true))
+        unique_pred_classes = len(np.unique(y_pred))
         
-        # Use 'macro' average which treats all classes equally regardless of imbalance
-        # Use 'binary' for actual binary classification
-        average_method = 'binary' if unique_classes == 2 else 'macro'
+        # If model predicts only one class, use accuracy as all metrics
+        if unique_pred_classes == 1:
+            print(f"Warning: Model predicted only 1 class out of {unique_true_classes}. Check data balance.")
+            return {
+                'accuracy': float(accuracy),
+                'precision': float(accuracy),  # Can't calculate precision if only 1 class predicted
+                'recall': float(accuracy),
+                'f1_score': float(accuracy),
+                'confusion_matrix': confusion_matrix(y_true, y_pred).tolist()
+            }
+        
+        # Use appropriate averaging method
+        if unique_true_classes <= 2:
+            average_method = 'binary'
+        else:
+            average_method = 'macro'  # Treats all classes equally
         
         try:
-            # Use zero_division=1 to avoid returning 0 metrics when no true positives
-            # This prevents misleading 0 scores due to class imbalance in test set
-            precision = precision_score(y_true, y_pred, average=average_method, zero_division=1)
-            recall = recall_score(y_true, y_pred, average=average_method, zero_division=1)
-            f1 = f1_score(y_true, y_pred, average=average_method, zero_division=1)
+            # Support all labels to include all classes even if not in test set
+            precision = precision_score(y_true, y_pred, average=average_method, 
+                                       zero_division=1, labels=np.unique(y_true))
+            recall = recall_score(y_true, y_pred, average=average_method, 
+                                zero_division=1, labels=np.unique(y_true))
+            f1 = f1_score(y_true, y_pred, average=average_method, 
+                         zero_division=1, labels=np.unique(y_true))
         except Exception as e:
-            # Fallback if there's an issue with metric calculation
-            print(f"Warning: Error calculating metrics: {e}")
-            precision = accuracy  # Fallback to accuracy
-            recall = accuracy
-            f1 = accuracy
+            print(f"Error calculating metrics with {average_method}: {e}")
+            # Fallback to weighted average
+            try:
+                precision = precision_score(y_true, y_pred, average='weighted', zero_division=1)
+                recall = recall_score(y_true, y_pred, average='weighted', zero_division=1)
+                f1 = f1_score(y_true, y_pred, average='weighted', zero_division=1)
+            except Exception as e2:
+                print(f"Error with weighted average: {e2}. Using accuracy as fallback.")
+                precision = accuracy
+                recall = accuracy
+                f1 = accuracy
         
         cm = confusion_matrix(y_true, y_pred).tolist()
         
