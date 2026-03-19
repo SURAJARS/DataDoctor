@@ -450,7 +450,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
   const featureEngineering = report?.feature_engineering || {};
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -647,10 +647,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
             </button>
           </div>
 
-          <div className="p-8">
+          <div className="p-4 md:p-8">
             {/* Overview Tab */}
             {activeTab === "overview" && (
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 {/* Dataset Health Radar */}
                 <div>
                   <DatasetHealthRadar

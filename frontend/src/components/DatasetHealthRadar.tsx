@@ -11,9 +11,10 @@ import {
 } from "recharts";
 
 // API Base URL - auto-detects production vs development
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://datadoctor.onrender.com/api'
-  : 'http://localhost:8000/api';
+const API_BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://datadoctor.onrender.com/api"
+    : "http://localhost:8000/api";
 
 interface RadarMetric {
   metric: string;
@@ -130,45 +131,47 @@ const DatasetHealthRadar: React.FC<DatasetHealthRadarProps> = ({
     <div className="space-y-6">
       {/* Title */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900">
           Dataset Health Overview
         </h2>
-        <p className="text-gray-600 text-sm mt-1">
+        <p className="text-gray-600 text-xs md:text-sm mt-1">
           Comprehensive view of dataset quality across 7 dimensions
         </p>
       </div>
 
       {/* Main Radar Card */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="bg-white rounded-xl shadow-md p-4 md:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Radar Chart */}
-          <div className="lg:col-span-2">
-            <ResponsiveContainer width="100%" height={400}>
-              <RadarChart
-                data={radarData.radar_metrics}
-                margin={{ top: 20, right: 80, bottom: 20, left: 80 }}
-              >
-                <PolarGrid stroke="#e5e7eb" />
-                <PolarAngleAxis dataKey="metric" tick={{ fontSize: 12 }} />
-                <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                <Radar
-                  name="Dataset Quality"
-                  dataKey="value"
-                  stroke={radarData.overall_color}
-                  fill={radarData.overall_color}
-                  fillOpacity={0.6}
-                  isAnimationActive={true}
-                />
-                <Tooltip
-                  formatter={(value: number) => `${value}/100`}
-                  contentStyle={{
-                    backgroundColor: "#ffffff",
-                    border: `2px solid ${radarData.overall_color}`,
-                    borderRadius: "8px",
-                  }}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
+          <div className="lg:col-span-2 w-full overflow-x-auto">
+            <div className="h-60 md:h-96 w-full m-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart
+                  data={radarData.radar_metrics}
+                  margin={{ top: 10, right: 40, bottom: 10, left: 40 }}
+                >
+                  <PolarGrid stroke="#e5e7eb" />
+                  <PolarAngleAxis dataKey="metric" tick={{ fontSize: 10 }} />
+                  <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                  <Radar
+                    name="Dataset Quality"
+                    dataKey="value"
+                    stroke={radarData.overall_color}
+                    fill={radarData.overall_color}
+                    fillOpacity={0.6}
+                    isAnimationActive={true}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => `${value}/100`}
+                    contentStyle={{
+                      backgroundColor: "#ffffff",
+                      border: `2px solid ${radarData.overall_color}`,
+                      borderRadius: "8px",
+                    }}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           {/* Health Summary Card */}
