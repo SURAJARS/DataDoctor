@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import InfoGuide from "./InfoGuide";
+import DatasetHealthRadar from "./DatasetHealthRadar";
 import {
   BarChart,
   Bar,
@@ -39,6 +40,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [showInfoGuide, setShowInfoGuide] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showAutoMLModal, setShowAutoMLModal] = useState(false);
+  const [autoMLResults, setAutoMLResults] = useState<any>(null);
+  const [autoMLLoading, setAutoMLLoading] = useState(false);
+  const [autoMLFile, setAutoMLFile] = useState<File | null>(null);
+  const [autoMLTargetColumn, setAutoMLTargetColumn] = useState("");
   const [loading, setLoading] = useState<{
     [key: string]: boolean;
   }>({
@@ -60,6 +66,56 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
     setTimeout(() => {
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     }, 4000);
+  };
+
+  // Handle AutoML Baseline Training
+  const handleAutoMLSubmit = async () => {
+    try {
+      if (!autoMLFile) {
+        addNotification("Please select a CSV or Excel file", "error");
+        return;
+      }
+
+      if (!autoMLTargetColumn.trim()) {
+        addNotification("Please enter the target column name", "error");
+        return;
+      }
+
+      setAutoMLLoading(true);
+      addNotification(
+        "Training AutoML baseline model... This may take 10-30 seconds",
+        "info",
+      );
+
+      const formData = new FormData();
+      formData.append("file", autoMLFile);
+      formData.append("target_column", autoMLTargetColumn);
+
+      const response = await fetch(
+        "http://localhost:8000/api/automl-baseline",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to train model (HTTP ${response.status})`);
+      }
+
+      const data = await response.json();
+      setAutoMLResults(data);
+      addNotification(
+        `✓ Model trained! Accuracy: ${(data.performance_metrics?.accuracy * 100 || 0).toFixed(1)}%`,
+        "success",
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to train model";
+      addNotification(`✗ AutoML Error: ${errorMessage}`, "error");
+    } finally {
+      setAutoMLLoading(false);
+    }
   };
 
   // Auto-Fix Dataset
@@ -153,6 +209,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
   // Email Report Modal State
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailInput, setEmailInput] = useState("");
+  const [includeCSV, setIncludeCSV] = useState(true);
 
   // Send Email Report
   const handleEmailReport = async (emailAddress?: string) => {
@@ -179,7 +236,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
 
       // Call backend API
       const response = await fetch(
-        `http://localhost:8000/api/report/send-email?email=${encodeURIComponent(email)}&analysis_id=${analysisId}`,
+        `http://localhost:8000/api/report/send-email?email=${encodeURIComponent(email)}&analysis_id=${analysisId}&include_csv=${includeCSV}`,
         { method: "POST" },
       );
 
@@ -568,6 +625,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
                 "Bias",
                 "Advanced",
                 "Recommendations",
+                "Baseline Model",
               ].map((tab) => (
                 <button
                   key={tab}
@@ -597,6 +655,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
             {/* Overview Tab */}
             {activeTab === "overview" && (
               <div className="space-y-6">
+                {/* Dataset Health Radar */}
+                <div>
+                  <DatasetHealthRadar
+                    analysisId={(report?.analysis_id as string) || "latest"}
+                  />
+                </div>
+
+                {/* Key Findings */}
                 <div>
                   <h3 className="text-xl font-bold text-slate-800 mb-4">
                     Key Findings
@@ -1120,6 +1186,96 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
                 </div>
               </div>
             )}
+
+            {/* Baseline Model Tab */}
+            {activeTab === "baseline-model" && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-4">
+                    🤖 AutoML Baseline Model
+                  </h3>
+                  <p className="text-slate-600 mb-4">
+                    Upload a dataset with a target column to train an automatic
+                    baseline model and get model suggestions.
+                  </p>
+
+                  {/* Coming Soon Notice */}
+                  <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="text-3xl">🔬</div>
+                      <div>
+                        <h4 className="font-semibold text-slate-800 mb-2">
+                          AutoML Baseline Engine (Feature Preview)
+                        </h4>
+                        <p className="text-slate-600 text-sm mb-4">
+                          This feature allows you to:
+                        </p>
+                        <ul className="text-slate-600 text-sm space-y-1 ml-4 list-disc">
+                          <li>
+                            Train automatic baseline models (RandomForest for
+                            classification/regression)
+                          </li>
+                          <li>
+                            Get intelligent model suggestions based on your
+                            dataset
+                          </li>
+                          <li>
+                            View confusion matrices for classification problems
+                          </li>
+                          <li>Analyze feature importance scores</li>
+                          <li>
+                            See performance metrics (accuracy, precision,
+                            recall, F1)
+                          </li>
+                        </ul>
+                        <button
+                          onClick={() => setShowAutoMLModal(true)}
+                          className="mt-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-2 px-4 rounded-lg font-semibold transition shadow-lg"
+                        >
+                          🚀 Try AutoML Baseline
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Model Suggestions Card */}
+                  <div className="mt-6 bg-white border border-gray-200 rounded-lg p-6">
+                    <h4 className="font-semibold text-slate-800 mb-4">
+                      💡 Recommended Models for Your Dataset
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="border border-green-200 bg-green-50 rounded-lg p-4">
+                        <h5 className="font-semibold text-green-900 mb-2">
+                          ✓ RandomForest
+                        </h5>
+                        <p className="text-sm text-green-800">
+                          Versatile ensemble method. Great for mixed feature
+                          types and capturing nonlinear patterns.
+                        </p>
+                      </div>
+                      <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                        <h5 className="font-semibold text-blue-900 mb-2">
+                          ✓ LightGBM
+                        </h5>
+                        <p className="text-sm text-blue-800">
+                          Fast gradient boosting. Efficient with large datasets
+                          and categorical features.
+                        </p>
+                      </div>
+                      <div className="border border-purple-200 bg-purple-50 rounded-lg p-4">
+                        <h5 className="font-semibold text-purple-900 mb-2">
+                          ✓ XGBoost
+                        </h5>
+                        <p className="text-sm text-purple-800">
+                          Powerful gradient boosting. Excellent accuracy but
+                          slower training.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1601,7 +1757,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
                     <li>✓ Feature importance rankings</li>
                     <li>✓ Recommendations & fixes</li>
                     <li>✓ Data quality metrics</li>
+                    {includeCSV && <li>✓ Cleaned dataset CSV file</li>}
                   </ul>
+                </div>
+
+                <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <input
+                    type="checkbox"
+                    id="attachCSV"
+                    checked={includeCSV}
+                    onChange={(e) => setIncludeCSV(e.target.checked)}
+                    className="w-5 h-5 cursor-pointer accent-blue-600"
+                  />
+                  <label htmlFor="attachCSV" className="cursor-pointer flex-1">
+                    <span className="font-semibold text-slate-800">
+                      📎 Attach Cleaned Dataset (CSV)
+                    </span>
+                    <p className="text-xs text-slate-600 mt-1">
+                      Include cleaned dataset file with all rows
+                    </p>
+                  </label>
                 </div>
               </div>
 
@@ -1618,6 +1793,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
                   onClick={() => {
                     setShowEmailModal(false);
                     setEmailInput("");
+                    setIncludeCSV(true);
                   }}
                   className="flex-1 bg-slate-400 hover:bg-slate-500 text-white py-2 px-4 rounded-lg font-semibold transition"
                 >
@@ -1649,6 +1825,334 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
         </div>
 
         {/* Info Guide Modal */}
+        {/* AutoML Baseline Modal */}
+        {showAutoMLModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-600 to-cyan-600 sticky top-0">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">
+                    🤖 AutoML Baseline Model Training
+                  </h2>
+                  <p className="text-blue-100 text-sm mt-1">
+                    Train an automatic baseline model on your dataset
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowAutoMLModal(false);
+                    setAutoMLFile(null);
+                    setAutoMLTargetColumn("");
+                    setAutoMLResults(null);
+                  }}
+                  className="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                {autoMLResults ? (
+                  // Display Results
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-green-50 to-cyan-50 border border-green-200 rounded-lg p-4">
+                      <h3 className="font-bold text-green-900 mb-2">
+                        ✓ Model Training Complete!
+                      </h3>
+                      <p className="text-sm text-green-800">
+                        Your baseline model has been trained successfully.
+                      </p>
+                    </div>
+
+                    {/* Model Type */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border border-gray-200 rounded-lg">
+                        <p className="text-sm text-gray-600">Model Type</p>
+                        <p className="text-lg font-bold text-gray-900">
+                          {autoMLResults?.baseline_model?.model_type || "N/A"}
+                        </p>
+                      </div>
+                      <div className="p-4 border border-gray-200 rounded-lg">
+                        <p className="text-sm text-gray-600">Problem Type</p>
+                        <p className="text-lg font-bold text-gray-900">
+                          {autoMLResults?.baseline_model?.problem_type ===
+                          "classification"
+                            ? "Classification"
+                            : "Regression"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Performance Metrics */}
+                    <div>
+                      <h4 className="font-bold text-gray-900 mb-3">
+                        📊 Performance Metrics
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {autoMLResults?.baseline_model?.problem_type ===
+                        "classification" ? (
+                          <>
+                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                              <p className="text-xs text-blue-600 font-semibold">
+                                Accuracy
+                              </p>
+                              <p className="text-lg font-bold text-blue-900">
+                                {(
+                                  autoMLResults?.performance_metrics?.accuracy *
+                                    100 || 0
+                                ).toFixed(1)}
+                                %
+                              </p>
+                            </div>
+                            <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                              <p className="text-xs text-purple-600 font-semibold">
+                                Precision
+                              </p>
+                              <p className="text-lg font-bold text-purple-900">
+                                {(
+                                  autoMLResults?.performance_metrics
+                                    ?.precision * 100 || 0
+                                ).toFixed(1)}
+                                %
+                              </p>
+                            </div>
+                            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <p className="text-xs text-green-600 font-semibold">
+                                Recall
+                              </p>
+                              <p className="text-lg font-bold text-green-900">
+                                {(
+                                  autoMLResults?.performance_metrics?.recall *
+                                    100 || 0
+                                ).toFixed(1)}
+                                %
+                              </p>
+                            </div>
+                            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                              <p className="text-xs text-yellow-600 font-semibold">
+                                F1 Score
+                              </p>
+                              <p className="text-lg font-bold text-yellow-900">
+                                {(
+                                  autoMLResults?.performance_metrics?.f1_score *
+                                    100 || 0
+                                ).toFixed(1)}
+                                %
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                              <p className="text-xs text-blue-600 font-semibold">
+                                R² Score
+                              </p>
+                              <p className="text-lg font-bold text-blue-900">
+                                {(
+                                  autoMLResults?.performance_metrics
+                                    ?.r2_score || 0
+                                ).toFixed(3)}
+                              </p>
+                            </div>
+                            <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                              <p className="text-xs text-purple-600 font-semibold">
+                                RMSE
+                              </p>
+                              <p className="text-lg font-bold text-purple-900">
+                                {(
+                                  autoMLResults?.performance_metrics?.rmse || 0
+                                ).toFixed(2)}
+                              </p>
+                            </div>
+                            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <p className="text-xs text-green-600 font-semibold">
+                                MAE
+                              </p>
+                              <p className="text-lg font-bold text-green-900">
+                                {(
+                                  autoMLResults?.performance_metrics?.mae || 0
+                                ).toFixed(2)}
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Top Features */}
+                    {autoMLResults?.top_features &&
+                      autoMLResults.top_features.length > 0 && (
+                        <div>
+                          <h4 className="font-bold text-gray-900 mb-3">
+                            ⭐ Top Features
+                          </h4>
+                          <div className="space-y-2">
+                            {autoMLResults.top_features
+                              .slice(0, 5)
+                              .map((feature: any, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                                >
+                                  <span className="text-gray-700 font-medium">
+                                    {feature.feature}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-24 h-2 bg-gray-200 rounded-full">
+                                      <div
+                                        className="h-full bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full"
+                                        style={{
+                                          width: `${Math.min(feature.importance * 100, 100)}%`,
+                                        }}
+                                      ></div>
+                                    </div>
+                                    <span className="text-xs text-gray-600 w-12">
+                                      {(feature.importance * 100).toFixed(1)}%
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Recommended Models */}
+                    {autoMLResults?.recommended_models && (
+                      <div>
+                        <h4 className="font-bold text-gray-900 mb-3">
+                          💡 Recommended Models
+                        </h4>
+                        <div className="space-y-2">
+                          {autoMLResults.recommended_models
+                            .slice(0, 5)
+                            .map((model: string, idx: number) => (
+                              <div
+                                key={idx}
+                                className="p-2 bg-blue-50 border border-blue-200 rounded flex items-center gap-2"
+                              >
+                                <span className="inline-block w-6 h-6 bg-blue-600 text-white rounded-full text-center text-xs font-bold">
+                                  {idx + 1}
+                                </span>
+                                <span className="text-gray-800 font-medium">
+                                  {model}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Close Button */}
+                    <button
+                      onClick={() => {
+                        setShowAutoMLModal(false);
+                        setAutoMLFile(null);
+                        setAutoMLTargetColumn("");
+                        setAutoMLResults(null);
+                      }}
+                      className="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-2 px-4 rounded-lg font-semibold transition"
+                    >
+                      Close
+                    </button>
+                  </div>
+                ) : (
+                  // Input Form
+                  <div className="space-y-6">
+                    {/* File Upload */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        📁 Dataset File (CSV or Excel)
+                      </label>
+                      <div
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition cursor-pointer"
+                        onClick={() =>
+                          document.getElementById("automl-file-input")?.click()
+                        }
+                      >
+                        <input
+                          id="automl-file-input"
+                          type="file"
+                          accept=".csv,.xlsx,.xls"
+                          onChange={(e) =>
+                            setAutoMLFile(e.target.files?.[0] || null)
+                          }
+                          className="hidden"
+                        />
+                        <p className="text-gray-600">
+                          {autoMLFile ? (
+                            <>
+                              ✓ Selected: <strong>{autoMLFile.name}</strong>
+                            </>
+                          ) : (
+                            <>
+                              Click to upload or drag & drop
+                              <br />
+                              <span className="text-xs text-gray-500">
+                                CSV, XLSX, or XLS files accepted
+                              </span>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Target Column Input */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        🎯 Target Column Name
+                      </label>
+                      <input
+                        type="text"
+                        value={autoMLTargetColumn}
+                        onChange={(e) => setAutoMLTargetColumn(e.target.value)}
+                        placeholder='e.g., "age", "price", "survived"'
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        The column you want to predict (target variable)
+                      </p>
+                    </div>
+
+                    {/* Information Box */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-900">
+                        <strong>ℹ️ AutoML will:</strong>
+                      </p>
+                      <ul className="text-sm text-blue-800 space-y-1 mt-2 ml-4 list-disc">
+                        <li>Detect problem type (classification/regression)</li>
+                        <li>Train a RandomForest baseline model</li>
+                        <li>Calculate performance metrics</li>
+                        <li>Extract feature importance</li>
+                        <li>Suggest alternative models</li>
+                      </ul>
+                    </div>
+
+                    {/* Train Button */}
+                    <button
+                      onClick={handleAutoMLSubmit}
+                      disabled={
+                        autoMLLoading || !autoMLFile || !autoMLTargetColumn
+                      }
+                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg font-semibold transition shadow-lg"
+                    >
+                      {autoMLLoading ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <span className="inline-block w-4 h-4 bg-white rounded-full animate-spin"></span>
+                          Training Model...
+                        </span>
+                      ) : (
+                        "🚀 Train Baseline Model"
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <InfoGuide
           isOpen={showInfoGuide}
           onClose={() => setShowInfoGuide(false)}

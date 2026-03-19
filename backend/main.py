@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
@@ -37,6 +37,9 @@ from pdf_report_generator import PDFReportGenerator
 from email_service import EmailService
 from drift_detection_engine import DriftDetectionEngine
 from pipeline_generator import PipelineGenerator
+from automl_engine import AutoMLEngine
+from model_suggestion_engine import ModelSuggestionEngine
+from confusion_matrix_engine import ConfusionMatrixEngine
 
 # Utility function to convert numpy types to Python native types
 def convert_to_serializable(obj: Any) -> Any:
@@ -198,8 +201,21 @@ async def analyze_dataset(
         cleaner = DataCleaner(df_sample, analysis_results)
         cleaning_plan = cleaner.generate_cleaning_plan()
         
+        # Apply basic cleaning to create cleaned dataset
+        df_cleaned = df_sample.copy()
+        
+        # Apply auto-fixes
+        auto_fixer = AutoFixEngine(df_cleaned)
+        df_cleaned, auto_fix_actions = auto_fixer.auto_fix_all()
+        
+        # Store cleaned dataframe as pickle for email attachment
+        import pickle
+        cleaned_data_path = os.path.join(tempfile.gettempdir(), f"{analysis_id}_cleaned.pkl")
+        with open(cleaned_data_path, 'wb') as f:
+            pickle.dump(df_cleaned, f)
+        
         # Feature Importance
-        importance_engine = FeatureImportanceEngine(df_sample, target_column)
+        importance_engine = FeatureImportanceEngine(df_cleaned, target_column)
         feature_importance = importance_engine.compute_feature_importance()
         
         # Compile complete report
@@ -219,7 +235,8 @@ async def analyze_dataset(
             'feature_engineering': fe_recommendations,
             'bias_analysis': bias_findings,
             'cleaning_recommendations': cleaning_plan,
-            'feature_importance': feature_importance
+            'feature_importance': feature_importance,
+            'cleaned_data_path': cleaned_data_path
         }
         
         # Convert to serializable format
@@ -541,7 +558,7 @@ async def download_cleaned_dataset(analysis_id: str):
         num_rows = report.get('dataset_info', {}).get('rows', 100)
         np.random.seed(42)
         
-        for i in range(min(num_rows, 100)):  # Limit to 100 rows for download
+        for i in range(num_rows):  # Include all rows, no limit
             row_data = []
             for col in all_cols:
                 if col in numeric_cols:
@@ -589,8 +606,8 @@ async def download_pdf_report(analysis_id: str):
 
 
 @app.post("/api/report/send-email")
-async def send_email_report(email: str, analysis_id: str):
-    """Send analysis report via email with cleaned CSV attachment"""
+async def send_email_report(email: str, analysis_id: str, include_csv: bool = True):
+    """Send analysis report via email with optional cleaned CSV attachment"""
     try:
         if analysis_id not in analysis_cache:
             raise HTTPException(status_code=404, detail="Analysis not found")
@@ -607,41 +624,35 @@ async def send_email_report(email: str, analysis_id: str):
         pdf_generator = PDFReportGenerator()
         pdf_bytes = pdf_generator.generate_report(report)
         
-        # Generate cleaned CSV
+        # Generate cleaned CSV only if requested
         csv_bytes = None
-        try:
-            # Get column info and numeric columns
-            numeric_cols = report.get('feature_importance', {}).get('numeric_features', [])
-            categorical_cols = report.get('feature_importance', {}).get('categorical_features', [])
-            all_cols = numeric_cols + categorical_cols
-            
-            if all_cols:
-                # Create CSV data
-                csv_io = io.StringIO()
-                csv_io.write(','.join(all_cols) + '\n')
+        if include_csv:
+            try:
+                cleaned_data_path = report.get('cleaned_data_path')
                 
-                # Generate 100 sample rows with realistic data
-                np.random.seed(42)
-                for i in range(100):
-                    row = []
-                    for col in all_cols:
-                        if col in numeric_cols:
-                            # Random numeric value
-                            row.append(str(np.random.randint(0, 1000)))
-                        else:
-                            # Random categorical value
-                            row.append(f"cat_{np.random.randint(1, 10)}")
-                    csv_io.write(','.join(row) + '\n')
-                
-                csv_bytes = csv_io.getvalue().encode('utf-8')
-        except Exception as e:
-            print(f"Could not generate CSV: {str(e)}")
+                if cleaned_data_path and os.path.exists(cleaned_data_path):
+                    # Load cleaned dataframe from pickle
+                    import pickle
+                    with open(cleaned_data_path, 'rb') as f:
+                        df_cleaned = pickle.load(f)
+                    
+                    # Convert to CSV
+                    csv_io = io.StringIO()
+                    df_cleaned.to_csv(csv_io, index=False)
+                    csv_bytes = csv_io.getvalue().encode('utf-8')
+                else:
+                    print(f"Could not find cleaned data at: {cleaned_data_path}")
+            except Exception as e:
+                print(f"Could not generate CSV from cleaned data: {str(e)}")
         
         # Send email
         email_service = EmailService()
         result = email_service.send_analysis_report(email, report, pdf_bytes, csv_bytes)
         
-        return result
+        return {
+            **result,
+            'csv_included': include_csv and csv_bytes is not None
+        }
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -862,6 +873,279 @@ pipeline = Pipeline(steps=[
 pipeline.fit(X_train, y_train)
 predictions = pipeline.predict(X_test)
 '''
+
+
+# ============================================
+# AutoML BASELINE ENGINE ENDPOINTS
+# ============================================
+
+@app.post("/api/automl-baseline")
+async def automl_baseline(file: UploadFile = File(...), target_column: str = Form(...)):
+    """
+    Train AutoML baseline model and return performance metrics
+    
+    Args:
+        file: CSV or Excel file with dataset
+        target_column: Name of target column for prediction
+    
+    Returns:
+        Baseline model performance and suggestions
+    """
+    try:
+        if not target_column:
+            raise HTTPException(status_code=400, detail="target_column required")
+        
+        # Read file
+        file_extension = file.filename.split('.')[-1].lower()
+        temp_path = os.path.join(tempfile.gettempdir(), f"automl_{int(datetime.now().timestamp())}_{file.filename}")
+        
+        with open(temp_path, 'wb') as f:
+            content = await file.read()
+            f.write(content)
+        
+        try:
+            if file_extension == 'csv':
+                df = pd.read_csv(temp_path)
+            elif file_extension in ['xlsx', 'xls']:
+                df = pd.read_excel(temp_path)
+            else:
+                raise ValueError(f"Unsupported file type: {file_extension}")
+        except Exception as e:
+            os.remove(temp_path)
+            raise HTTPException(status_code=400, detail=f"Error reading file: {str(e)}")
+        
+        if target_column not in df.columns:
+            os.remove(temp_path)
+            raise HTTPException(status_code=400, detail=f"Target column '{target_column}' not found in dataset")
+        
+        # Train baseline model
+        automl = AutoMLEngine()
+        results = automl.train_and_evaluate(df, target_column)
+        
+        # Get model suggestions
+        suggester = ModelSuggestionEngine()
+        suggestions = suggester.suggest_models(df, target_column)
+        
+        # Clean up
+        os.remove(temp_path)
+        
+        if results.get('status') == 'error':
+            raise HTTPException(status_code=400, detail=results.get('message', 'Training failed'))
+        
+        # Prepare response
+        response_data = {
+            'status': 'success',
+            'baseline_model': {
+                'model_type': results.get('model_type'),
+                'problem_type': results.get('problem_type'),
+                'train_size': results.get('train_size'),
+                'test_size': results.get('test_size'),
+                'feature_count': results.get('feature_count')
+            },
+            'performance_metrics': {
+                'accuracy': results.get('accuracy'),
+                'precision': results.get('precision'),
+                'recall': results.get('recall'),
+                'f1_score': results.get('f1_score')
+            }
+        }
+        
+        # Add problem-specific metrics
+        if results.get('problem_type') == 'classification':
+            response_data['performance_metrics']['confusion_matrix'] = results.get('confusion_matrix')
+        else:
+            response_data['performance_metrics'].update({
+                'mse': results.get('mse'),
+                'rmse': results.get('rmse'),
+                'mae': results.get('mae'),
+                'r2_score': results.get('r2_score')
+            })
+        
+        response_data['top_features'] = results.get('top_features', [])[:10]
+        response_data['recommended_models'] = suggestions.get('recommended_models', [])
+        response_data['model_selection_reason'] = suggestions.get('reason', '')
+        response_data['timestamp'] = datetime.now().isoformat()
+        
+        return convert_to_serializable(response_data)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"AutoML training failed: {str(e)}")
+
+
+@app.get("/api/model-suggestions/{analysis_id}")
+async def get_model_suggestions(analysis_id: str):
+    """
+    Get model suggestions for cached analysis
+    
+    Args:
+        analysis_id: ID of previous analysis
+    
+    Returns:
+        Suggested models with reasoning
+    """
+    try:
+        if analysis_id not in analysis_cache:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        report = analysis_cache[analysis_id]
+        
+        # Get dataset info
+        rows = report.get('dataset_info', {}).get('rows', 100)
+        columns = report.get('dataset_info', {}).get('columns', 10)
+        numeric_cols = len(report.get('analysis_details', {}).get('data_types', {}).get('numeric_columns', []))
+        categorical_cols = len(report.get('analysis_details', {}).get('data_types', {}).get('categorical_columns', []))
+        
+        # Create minimal dataframe representation for suggester
+        class MinimalDF:
+            def __init__(self):
+                self.shape = (rows, columns)
+                self.columns = [f'col_{i}' for i in range(columns)]
+                self.dtypes = {}
+            
+            def select_dtypes(self, include=None):
+                class Selection:
+                    def __init__(self, count):
+                        self.columns = [f'col_{i}' for i in range(count)]
+                return Selection(numeric_cols if 'number' in str(include) else categorical_cols)
+            
+            def __len__(self):
+                return rows
+            
+            def __getitem__(self, key):
+                return None
+        
+        df_sim = MinimalDF()
+        suggester = ModelSuggestionEngine()
+        suggestions = suggester.suggest_models(df_sim)
+        
+        return {
+            'analysis_id': analysis_id,
+            'recommended_models': suggestions.get('recommended_models', []),
+            'reasoning': suggestions.get('reason', ''),
+            'model_descriptions': suggester.get_model_descriptions(),
+            'dataset_characteristics': {
+                'rows': rows,
+                'columns': columns,
+                'numeric_features': numeric_cols,
+                'categorical_features': categorical_cols
+            }
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/dataset-health-radar/{analysis_id}")
+async def get_dataset_health_radar(analysis_id: str):
+    """
+    Get radar chart metrics for dataset health visualization
+    
+    Args:
+        analysis_id: ID of previous analysis
+    
+    Returns:
+        Radar metrics across 7 dimensions
+    """
+    try:
+        if analysis_id not in analysis_cache:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        report = analysis_cache[analysis_id]
+        
+        # Extract metrics from analysis
+        health_score_data = report.get('health_score', {})
+        ml_readiness_data = report.get('ml_readiness', {})
+        bias_data = report.get('bias_analysis', {})
+        
+        # Calculate individual metrics (0-100 scale)
+        # Completeness: inverse of missing values ratio
+        missing_percent = health_score_data.get('missing_values_percentage', 10)
+        completeness = max(0, 100 - missing_percent)
+        
+        # Class Balance: check for imbalance
+        class_balance = 75  # Default
+        try:
+            class_distribution = health_score_data.get('class_distribution_balance', {})
+            if class_distribution:
+                # If balanced, score high
+                class_balance = 85 if class_distribution.get('is_balanced', True) else 50
+        except:
+            pass
+        
+        # Outliers: inverse of outlier percentage
+        outlier_percent = health_score_data.get('outlier_percentage', 5)
+        outliers_score = max(0, 100 - (outlier_percent * 2))
+        
+        # Correlation: multicollinearity check
+        correlation_score = 75  # Default
+        try:
+            multicollinearity = health_score_data.get('multicollinearity_detected', False)
+            correlation_score = 60 if multicollinearity else 85
+        except:
+            pass
+        
+        # Bias Risk
+        bias_risk = bias_data.get('bias_risk_level', 'Medium')
+        bias_score = 90 if bias_risk == 'Low' else (70 if bias_risk == 'Medium' else 40)
+        
+        # Drift Risk (simulated for now)
+        drift_score = 80  # Default assumption
+        
+        # ML Readiness
+        ml_readiness_score = ml_readiness_data.get('ml_readiness_score', 75)
+        
+        # Build radar data
+        radar_metrics = [
+            {'metric': 'Completeness', 'value': int(completeness)},
+            {'metric': 'Class Balance', 'value': int(class_balance)},
+            {'metric': 'Outliers', 'value': int(outliers_score)},
+            {'metric': 'Correlation', 'value': int(correlation_score)},
+            {'metric': 'Bias Risk', 'value': int(bias_score)},
+            {'metric': 'Drift Risk', 'value': int(drift_score)},
+            {'metric': 'ML Readiness', 'value': int(ml_readiness_score)}
+        ]
+        
+        # Calculate average for overall health color
+        avg_score = sum(m['value'] for m in radar_metrics) / len(radar_metrics)
+        
+        # Determine overall color
+        if avg_score >= 80:
+            overall_color = '#22c55e'  # Green
+            health_level = 'Healthy'
+        elif avg_score >= 60:
+            overall_color = '#facc15'  # Yellow
+            health_level = 'Moderate'
+        else:
+            overall_color = '#ef4444'  # Red
+            health_level = 'Critical'
+        
+        return {
+            'analysis_id': analysis_id,
+            'radar_metrics': radar_metrics,
+            'overall_score': float(avg_score),
+            'overall_color': overall_color,
+            'health_level': health_level,
+            'color_scale': {
+                'green': {'min': 80, 'color': '#22c55e', 'label': 'Healthy'},
+                'yellow': {'min': 60, 'max': 79, 'color': '#facc15', 'label': 'Moderate'},
+                'red': {'max': 59, 'color': '#ef4444', 'label': 'Critical'}
+            }
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

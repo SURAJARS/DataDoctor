@@ -7,6 +7,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 from email.utils import formatdate
 from email import encoders
 import os
@@ -76,12 +77,16 @@ class EmailService:
             if attachments:
                 for file_bytes, filename in attachments:
                     if file_bytes:
-                        part = MIMEBase('application', 'octet-stream')
-                        part.set_payload(file_bytes)
-                        encoders.encode_base64(part)
-                        part.add_header('Content-Disposition', 'attachment',
-                                      filename=filename)
-                        msg.attach(part)
+                        # Determine MIME type based on file extension
+                        if filename.endswith('.pdf'):
+                            att = MIMEApplication(file_bytes, _subtype='pdf')
+                        elif filename.endswith('.csv'):
+                            att = MIMEApplication(file_bytes, _subtype='vnd.ms-excel')
+                        else:
+                            att = MIMEApplication(file_bytes, _subtype='octet-stream')
+                        
+                        att.add_header('Content-Disposition', 'attachment', filename=filename)
+                        msg.attach(att)
             
             # Send email
             server = smtplib.SMTP(self.smtp_server, self.smtp_port)
