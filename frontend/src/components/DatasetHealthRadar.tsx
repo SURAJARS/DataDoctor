@@ -246,7 +246,10 @@ const DatasetHealthRadar: React.FC<DatasetHealthRadarProps> = ({
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
           {radarData.radar_metrics.map((metric, idx) => (
-            <div key={idx} className="p-3 md:p-4 border border-gray-200 rounded-lg">
+            <div
+              key={idx}
+              className="p-3 md:p-4 border border-gray-200 rounded-lg"
+            >
               <p className="text-xs md:text-sm font-medium text-gray-600">
                 {metric.metric}
               </p>
