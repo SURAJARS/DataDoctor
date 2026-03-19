@@ -218,6 +218,7 @@ export const InfoGuide: React.FC<InfoGuideProps> = ({
   const [selectedTopic, setSelectedTopic] = useState<string | null>(
     searchTerm in infoDatabase ? searchTerm : null,
   );
+  const [showSidebar, setShowSidebar] = useState(false);
 
   if (!isOpen) return null;
 
@@ -228,68 +229,86 @@ export const InfoGuide: React.FC<InfoGuideProps> = ({
   const topicList = Object.keys(infoDatabase);
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6 flex justify-between items-center">
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-3 sm:p-6 flex justify-between items-start sm:items-center gap-2">
           <div>
-            <h1 className="text-3xl font-bold">📚 Data Doctor Guide</h1>
-            <p className="text-blue-100 mt-1">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
+              📚 Data Doctor Guide
+            </h1>
+            <p className="text-blue-100 mt-0.5 sm:mt-1 text-xs sm:text-sm">
               Understand all analysis terms and metrics
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-white hover:bg-white/20 p-2 rounded-lg transition"
+            className="text-white hover:bg-white/20 p-1 sm:p-2 rounded-lg transition flex-shrink-0 text-xl"
           >
             ✕
           </button>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
-          {/* Topics Sidebar */}
-          <div className="w-64 bg-slate-50 border-r border-slate-200 overflow-y-auto">
-            <div className="p-4 space-y-2">
-              {topicList.map((topic) => (
-                <button
-                  key={topic}
-                  onClick={() => setSelectedTopic(topic)}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition ${
-                    selectedTopic === topic
-                      ? "bg-blue-600 text-white font-semibold"
-                      : "text-slate-700 hover:bg-slate-200"
-                  }`}
-                >
-                  {infoDatabase[topic].title}
-                </button>
-              ))}
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+          {/* Topics Sidebar - Hidden on mobile, toggle with button */}
+          {showSidebar && (
+            <div className="w-full md:w-64 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200 overflow-y-auto">
+              <div className="p-3 sm:p-4 space-y-1 sm:space-y-2">
+                {topicList.map((topic) => (
+                  <button
+                    key={topic}
+                    onClick={() => {
+                      setSelectedTopic(topic);
+                      setShowSidebar(false);
+                    }}
+                    className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition text-xs sm:text-sm md:text-base ${
+                      selectedTopic === topic
+                        ? "bg-blue-600 text-white font-semibold"
+                        : "text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    {infoDatabase[topic].title}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Content Area */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+            {/* Topics Toggle Button for Mobile */}
+            <div className="md:hidden mb-3">
+              <button
+                onClick={() => setShowSidebar(!showSidebar)}
+                className="w-full bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-semibold transition hover:bg-blue-200 text-sm"
+              >
+                {showSidebar
+                  ? "Hide Topics"
+                  : "Show Topics (" + topicList.length + ")"}
+              </button>
+            </div>
             {displayInfo && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h2 className="text-3xl font-bold text-slate-900 mb-2">
+                  <h2 className="text-lg sm:text-2xl md:text-3xl font-bold text-slate-900 mb-1 sm:mb-2">
                     {displayInfo.title}
                   </h2>
-                  <p className="text-lg text-slate-600">
+                  <p className="text-xs sm:text-sm md:text-base text-slate-600">
                     {displayInfo.description}
                   </p>
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold text-slate-800 mb-3">
+                  <h3 className="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-2 sm:mb-3">
                     Key Points:
                   </h3>
-                  <ul className="space-y-2">
+                  <ul className="space-y-1.5 sm:space-y-2">
                     {displayInfo.details.map((detail, idx) => (
                       <li
                         key={idx}
-                        className="flex items-start gap-3 text-slate-700"
+                        className="flex items-start gap-2 sm:gap-3 text-slate-700 text-xs sm:text-sm md:text-base"
                       >
-                        <span className="text-blue-600 font-bold mt-0.5">
+                        <span className="text-blue-600 font-bold mt-0.5 flex-shrink-0">
                           ▸
                         </span>
                         <span>{detail}</span>
@@ -298,20 +317,22 @@ export const InfoGuide: React.FC<InfoGuideProps> = ({
                   </ul>
                 </div>
 
-                <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
-                  <h3 className="font-semibold text-blue-900 mb-2">
+                <div className="bg-blue-50 border-l-4 border-blue-600 p-3 sm:p-4 rounded">
+                  <h3 className="font-semibold text-blue-900 mb-1 sm:mb-2 text-sm sm:text-base">
                     💡 Example:
                   </h3>
-                  <p className="text-blue-800">{displayInfo.example}</p>
+                  <p className="text-blue-800 text-xs sm:text-sm md:text-base">
+                    {displayInfo.example}
+                  </p>
                 </div>
 
                 {selectedTopic === "difference" && (
-                  <div className="bg-purple-50 border-l-4 border-purple-600 p-4 rounded">
-                    <h3 className="font-semibold text-purple-900 mb-3">
+                  <div className="bg-purple-50 border-l-4 border-purple-600 p-3 sm:p-4 rounded">
+                    <h3 className="font-semibold text-purple-900 mb-2 sm:mb-3 text-sm sm:text-base">
                       📊 Quick Reference Table:
                     </h3>
-                    <div className="space-y-2 text-sm text-purple-800">
-                      <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2 text-xs sm:text-sm text-purple-800">
+                      <div className="grid grid-cols-2 gap-2 sm:gap-4">
                         <div>
                           <p className="font-semibold mb-1">Health Score</p>
                           <p className="text-xs">
@@ -338,13 +359,13 @@ export const InfoGuide: React.FC<InfoGuideProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-100 border-t border-slate-200 px-6 py-4 flex justify-between items-center">
-          <p className="text-sm text-slate-600">
+        <div className="bg-slate-100 border-t border-slate-200 px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-4">
+          <p className="text-xs sm:text-sm text-slate-600 text-center sm:text-left">
             💡 Tip: Use this guide to understand each metric in your dashboard
           </p>
           <button
             onClick={onClose}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold transition text-sm w-full sm:w-auto"
           >
             Close Guide
           </button>
