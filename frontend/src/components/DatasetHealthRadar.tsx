@@ -128,10 +128,10 @@ const DatasetHealthRadar: React.FC<DatasetHealthRadarProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Title */}
       <div>
-        <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+        <h2 className="text-lg md:text-2xl font-bold text-gray-900">
           Dataset Health Overview
         </h2>
         <p className="text-gray-600 text-xs md:text-sm mt-1">
@@ -143,15 +143,15 @@ const DatasetHealthRadar: React.FC<DatasetHealthRadarProps> = ({
       <div className="bg-white rounded-xl shadow-md p-4 md:p-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Radar Chart */}
-          <div className="lg:col-span-2 w-full overflow-x-auto">
-            <div className="h-60 md:h-96 w-full m-0">
+          <div className="lg:col-span-2 w-full flex flex-col">
+            <div className="h-80 md:h-screen md:max-h-96 w-full flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart
                   data={radarData.radar_metrics}
-                  margin={{ top: 10, right: 40, bottom: 10, left: 40 }}
+                  margin={{ top: 5, right: 20, bottom: 5, left: 20 }}
                 >
                   <PolarGrid stroke="#e5e7eb" />
-                  <PolarAngleAxis dataKey="metric" tick={{ fontSize: 10 }} />
+                  <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} />
                   <PolarRadiusAxis angle={90} domain={[0, 100]} />
                   <Radar
                     name="Dataset Quality"
@@ -175,10 +175,10 @@ const DatasetHealthRadar: React.FC<DatasetHealthRadarProps> = ({
           </div>
 
           {/* Health Summary Card */}
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4">
             {/* Overall Health Score */}
             <div
-              className={`p-4 rounded-lg border-2`}
+              className={`p-3 md:p-4 rounded-lg border-2`}
               style={{
                 backgroundColor:
                   radarData.overall_color === "#22c55e"
@@ -189,17 +189,17 @@ const DatasetHealthRadar: React.FC<DatasetHealthRadarProps> = ({
                 borderColor: radarData.overall_color,
               }}
             >
-              <p className="text-sm font-medium text-gray-600">
+              <p className="text-xs md:text-sm font-medium text-gray-600">
                 Overall Health
               </p>
               <p
-                className="text-3xl font-bold mt-1"
+                className="text-2xl md:text-3xl font-bold mt-1"
                 style={{ color: radarData.overall_color }}
               >
                 {radarData.overall_score.toFixed(1)}/100
               </p>
               <p
-                className="text-sm font-semibold mt-2"
+                className="text-xs md:text-sm font-semibold mt-2"
                 style={{ color: radarData.overall_color }}
               >
                 {radarData.health_level}
@@ -207,28 +207,28 @@ const DatasetHealthRadar: React.FC<DatasetHealthRadarProps> = ({
             </div>
 
             {/* Color Legend */}
-            <div className="p-4 bg-gray-50 rounded-lg space-y-2">
-              <p className="text-sm font-semibold text-gray-700">
+            <div className="p-3 md:p-4 bg-gray-50 rounded-lg space-y-2">
+              <p className="text-xs md:text-sm font-semibold text-gray-700">
                 Quality Scale
               </p>
-              <div className="space-y-2 text-xs">
+              <div className="space-y-1.5 text-xs">
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-3 h-3 rounded-full"
+                    className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full"
                     style={{ backgroundColor: "#22c55e" }}
                   ></div>
                   <span className="text-gray-600">Healthy (≥80)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-3 h-3 rounded-full"
+                    className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full"
                     style={{ backgroundColor: "#facc15" }}
                   ></div>
                   <span className="text-gray-600">Moderate (60-79)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-3 h-3 rounded-full"
+                    className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full"
                     style={{ backgroundColor: "#ef4444" }}
                   ></div>
                   <span className="text-gray-600">Critical (&lt;60)</span>
@@ -240,28 +240,28 @@ const DatasetHealthRadar: React.FC<DatasetHealthRadarProps> = ({
       </div>
 
       {/* Detailed Metrics */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">
+      <div className="bg-white rounded-xl shadow-md p-4 md:p-6">
+        <h3 className="text-base md:text-lg font-bold text-gray-900 mb-4">
           Detailed Metrics Breakdown
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
           {radarData.radar_metrics.map((metric, idx) => (
-            <div key={idx} className="p-4 border border-gray-200 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">
+            <div key={idx} className="p-3 md:p-4 border border-gray-200 rounded-lg">
+              <p className="text-xs md:text-sm font-medium text-gray-600">
                 {metric.metric}
               </p>
               <div className="mt-2 flex items-end justify-between">
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xl md:text-2xl font-bold text-gray-900">
                   {metric.value}
                 </p>
                 <div
-                  className="w-1 h-12 rounded"
+                  className="w-0.5 h-8 md:h-12 rounded"
                   style={{ backgroundColor: getMetricColor(metric.value) }}
                 ></div>
               </div>
 
               {/* Mini Progress Bar */}
-              <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
+              <div className="mt-2 w-full bg-gray-200 rounded-full h-1">
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
@@ -271,7 +271,7 @@ const DatasetHealthRadar: React.FC<DatasetHealthRadarProps> = ({
                 ></div>
               </div>
 
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-gray-500 mt-1">
                 {metric.value >= 80
                   ? "✓ Excellent"
                   : metric.value >= 60
@@ -284,8 +284,8 @@ const DatasetHealthRadar: React.FC<DatasetHealthRadarProps> = ({
       </div>
 
       {/* Information Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-900">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4">
+        <p className="text-xs md:text-sm text-blue-900">
           <span className="font-semibold">ℹ️ How to use this radar:</span> Each
           axis represents a different quality dimension. Higher values indicate
           better dataset quality. Aim for all metrics to be in the green zone
