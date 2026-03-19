@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { api } from "../utils/api";
 
 interface UploadProps {
   onAnalysisComplete: (report: any) => void;
@@ -38,21 +39,14 @@ export const UploadPage: React.FC<UploadProps> = ({ onAnalysisComplete }) => {
       formData.append("sensitive_features", sensitiveFeatures);
 
     try {
-      const response = await axios.post(
-        "http://localhost:8000/api/analyze",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-          onUploadProgress: (progress) => {
-            setProgress(Math.round((progress.loaded / progress.total!) * 100));
-          },
-        },
+      const response = await api.analyzeDataset(
+        file,
+        targetColumn || undefined,
+        sensitiveFeatures || undefined,
       );
 
       // Get full report
-      const reportResponse = await axios.get(
-        `http://localhost:8000/api/report/${response.data.analysis_id}`,
-      );
+      const reportResponse = await api.getReport(response.data.analysis_id);
       onAnalysisComplete(reportResponse.data);
     } catch (err: any) {
       setError(

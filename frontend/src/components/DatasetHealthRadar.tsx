@@ -10,6 +10,11 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+// API Base URL - auto-detects production vs development
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://datadoctor.onrender.com/api'
+  : 'http://localhost:8000/api';
+
 interface RadarMetric {
   metric: string;
   value: number;
@@ -50,7 +55,7 @@ const DatasetHealthRadar: React.FC<DatasetHealthRadarProps> = ({
       try {
         setLoading(true);
         const response = await fetch(
-          `http://localhost:8000/api/dataset-health-radar/${analysisId}`,
+          `${API_BASE_URL}/dataset-health-radar/${analysisId}`,
         );
 
         if (!response.ok) {

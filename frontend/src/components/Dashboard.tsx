@@ -18,6 +18,11 @@ import {
   HeatMap,
 } from "recharts";
 
+// API Base URL - auto-detects production vs development
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://datadoctor.onrender.com/api'
+  : 'http://localhost:8000/api';
+
 interface HealthScore {
   dataset_health_score: number;
   overall_status: string;
@@ -92,7 +97,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
       formData.append("target_column", autoMLTargetColumn);
 
       const response = await fetch(
-        "http://localhost:8000/api/automl-baseline",
+        `${API_BASE_URL}/automl-baseline`,
         {
           method: "POST",
           body: formData,
@@ -130,7 +135,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
       const analysisId = (report?.analysis_id as string) || "latest";
 
       // Call backend API
-      const response = await fetch(`http://localhost:8000/api/auto-fix`, {
+      const response = await fetch(`${API_BASE_URL}/auto-fix`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ analysis_id: analysisId }),
@@ -151,7 +156,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
 
         // Trigger file download
         const link = document.createElement("a");
-        link.href = `http://localhost:8000/api/download-cleaned/${analysisId}`;
+        link.href = `${API_BASE_URL}/download-cleaned/${analysisId}`;
         link.download = data.cleaned_file || `cleaned_${analysisId}.csv`;
         document.body.appendChild(link);
         link.click();
@@ -179,7 +184,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
 
       // Call backend API
       const response = await fetch(
-        `http://localhost:8000/api/report/download-pdf/${analysisId}`,
+        `${API_BASE_URL}/report/download-pdf/${analysisId}`,
       );
 
       if (!response.ok) throw new Error("Failed to generate PDF");
@@ -236,7 +241,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
 
       // Call backend API
       const response = await fetch(
-        `http://localhost:8000/api/report/send-email?email=${encodeURIComponent(email)}&analysis_id=${analysisId}&include_csv=${includeCSV}`,
+        `${API_BASE_URL}/report/send-email?email=${encodeURIComponent(email)}&analysis_id=${analysisId}&include_csv=${includeCSV}`,
         { method: "POST" },
       );
 
@@ -268,7 +273,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
 
       // Call backend API
       const response = await fetch(
-        `http://localhost:8000/api/risk-score/${analysisId}`,
+        `${API_BASE_URL}/risk-score/${analysisId}`,
       );
 
       if (!response.ok) throw new Error("Failed to calculate risk score");
@@ -304,7 +309,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
       // For now, send a POST request with basic analysis
       // In production, this would accept file uploads
       const response = await fetch(
-        `http://localhost:8000/api/drift-detection`,
+        `${API_BASE_URL}/drift-detection`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -367,7 +372,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
 
       // Call backend API
       const response = await fetch(
-        `http://localhost:8000/api/pipeline/${analysisId}`,
+        `${API_BASE_URL}/pipeline/${analysisId}`,
       );
 
       if (!response.ok) throw new Error("Failed to generate pipeline");
@@ -402,7 +407,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
 
       // Call backend API
       const response = await fetch(
-        `http://localhost:8000/api/feature-importance-dryrun`,
+        `${API_BASE_URL}/feature-importance-dryrun`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
