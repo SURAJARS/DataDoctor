@@ -697,7 +697,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
             </button>
           </div>
 
-          {/* Mobile Tabs Dropdown Menu */}
+          {/* Mobile Tabs Dropdown Menu - Outside of header flex */}
           {showTabMenu && (
             <div
               className="md:hidden bg-white border-b-2 border-blue-600 shadow-lg absolute top-14 left-0 right-0 z-50 max-h-96 overflow-y-auto"
@@ -733,7 +733,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
               </div>
             </div>
           )}
-        </div>
 
           <div className="p-4 md:p-8">
             {/* Overview Tab */}
