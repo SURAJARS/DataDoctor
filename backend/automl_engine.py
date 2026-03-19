@@ -119,10 +119,15 @@ class AutoMLEngine:
         Returns:
             Results dictionary
         """
-        # Split data
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=random_state
-        )
+        # Split data with stratification for classification to handle imbalanced classes
+        if self.problem_type == 'classification':
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=test_size, random_state=random_state, stratify=y
+            )
+        else:
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=test_size, random_state=random_state
+            )
         
         # Train model
         if self.problem_type == 'classification':
@@ -132,7 +137,8 @@ class AutoMLEngine:
                 min_samples_split=5,
                 min_samples_leaf=2,
                 random_state=random_state,
-                n_jobs=-1
+                n_jobs=-1,
+                class_weight='balanced'  # Handle class imbalance
             )
         else:
             self.model = RandomForestRegressor(
@@ -176,14 +182,16 @@ class AutoMLEngine:
         # Determine number of classes
         unique_classes = len(np.unique(y_true))
         
-        # Always use 'weighted' average for multiclass to handle imbalanced data
+        # Use 'macro' average which treats all classes equally regardless of imbalance
         # Use 'binary' for actual binary classification
-        average_method = 'binary' if unique_classes == 2 else 'weighted'
+        average_method = 'binary' if unique_classes == 2 else 'macro'
         
         try:
-            precision = precision_score(y_true, y_pred, average=average_method, zero_division=0)
-            recall = recall_score(y_true, y_pred, average=average_method, zero_division=0)
-            f1 = f1_score(y_true, y_pred, average=average_method, zero_division=0)
+            # Use zero_division=1 to avoid returning 0 metrics when no true positives
+            # This prevents misleading 0 scores due to class imbalance in test set
+            precision = precision_score(y_true, y_pred, average=average_method, zero_division=1)
+            recall = recall_score(y_true, y_pred, average=average_method, zero_division=1)
+            f1 = f1_score(y_true, y_pred, average=average_method, zero_division=1)
         except Exception as e:
             # Fallback if there's an issue with metric calculation
             print(f"Warning: Error calculating metrics: {e}")
