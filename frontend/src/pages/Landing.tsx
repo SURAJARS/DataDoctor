@@ -242,7 +242,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <h3 className="text-3xl font-bold text-white mb-4">
             Start Analyzing Your Data Today
           </h3>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-4 rounded-lg font-semibold text-lg transition transform hover:scale-105">
+          <button
+            onClick={onNavigateToUpload}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-4 rounded-lg font-semibold text-lg transition transform hover:scale-105"
+          >
             Upload Your First Dataset
           </button>
         </div>
