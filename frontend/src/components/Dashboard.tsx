@@ -19,9 +19,10 @@ import {
 } from "recharts";
 
 // API Base URL - auto-detects production vs development
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://datadoctor.onrender.com/api'
-  : 'http://localhost:8000/api';
+const API_BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://datadoctor.onrender.com/api"
+    : "http://localhost:8000/api";
 
 interface HealthScore {
   dataset_health_score: number;
@@ -96,13 +97,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
       formData.append("file", autoMLFile);
       formData.append("target_column", autoMLTargetColumn);
 
-      const response = await fetch(
-        `${API_BASE_URL}/automl-baseline`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
+      const response = await fetch(`${API_BASE_URL}/automl-baseline`, {
+        method: "POST",
+        body: formData,
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to train model (HTTP ${response.status})`);
@@ -272,9 +270,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
       const analysisId = (report?.analysis_id as string) || "latest";
 
       // Call backend API
-      const response = await fetch(
-        `${API_BASE_URL}/risk-score/${analysisId}`,
-      );
+      const response = await fetch(`${API_BASE_URL}/risk-score/${analysisId}`);
 
       if (!response.ok) throw new Error("Failed to calculate risk score");
 
@@ -308,17 +304,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
 
       // For now, send a POST request with basic analysis
       // In production, this would accept file uploads
-      const response = await fetch(
-        `${API_BASE_URL}/drift-detection`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            analysis_id: analysisId,
-            use_demo: true,
-          }),
-        },
-      );
+      const response = await fetch(`${API_BASE_URL}/drift-detection`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          analysis_id: analysisId,
+          use_demo: true,
+        }),
+      });
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -371,9 +364,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
       const analysisId = (report?.analysis_id as string) || "latest";
 
       // Call backend API
-      const response = await fetch(
-        `${API_BASE_URL}/pipeline/${analysisId}`,
-      );
+      const response = await fetch(`${API_BASE_URL}/pipeline/${analysisId}`);
 
       if (!response.ok) throw new Error("Failed to generate pipeline");
 
@@ -620,8 +611,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
 
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="flex border-b items-center justify-between">
-            <div className="flex flex-1">
+          <div className="flex border-b items-center justify-between overflow-x-auto">
+            <div className="flex flex-1 overflow-x-auto scrollbar-hide">
               {[
                 "Overview",
                 "Issues",
@@ -637,7 +628,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
                   onClick={() =>
                     setActiveTab(tab.toLowerCase().replace(" ", "-"))
                   }
-                  className={`py-4 px-4 text-center font-medium transition whitespace-nowrap ${
+                  className={`py-3 px-3 text-center font-medium transition whitespace-nowrap text-sm md:text-base md:px-4 md:py-4 ${
                     activeTab === tab.toLowerCase().replace(" ", "-")
                       ? "bg-blue-600 text-white"
                       : "text-slate-600 hover:bg-slate-50"
@@ -649,7 +640,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
             </div>
             <button
               onClick={() => setShowInfoGuide(true)}
-              className="px-4 py-4 text-blue-600 hover:bg-blue-50 font-semibold transition border-l"
+              className="px-3 py-3 md:px-4 md:py-4 text-blue-600 hover:bg-blue-50 font-semibold transition border-l text-sm md:text-base whitespace-nowrap"
               title="Open Information Guide"
             >
               📖 Help & Info

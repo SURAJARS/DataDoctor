@@ -16,7 +16,20 @@ export const UploadPage: React.FC<UploadProps> = ({ onAnalysisComplete }) => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      const validFormats = ["csv", "xlsx", "xls", "parquet", "json"];
+      const fileExtension =
+        selectedFile.name.split(".").pop()?.toLowerCase() || "";
+
+      if (!validFormats.includes(fileExtension)) {
+        setError(
+          `Invalid file format. Please upload ${validFormats.join(", ").toUpperCase()} file only.`,
+        );
+        setFile(null);
+        return;
+      }
+
+      setFile(selectedFile);
       setError("");
     }
   };
