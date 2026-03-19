@@ -612,15 +612,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
 
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="flex border-b items-center justify-between overflow-x-auto relative">
+          {/* Tab Header */}
+          <div className="flex border-b items-center justify-between relative bg-slate-50">
             {/* Hamburger Menu for Mobile */}
-            <button
-              onClick={() => setShowTabMenu(!showTabMenu)}
-              className="md:hidden px-4 py-3 text-slate-700 hover:bg-slate-100 transition font-bold text-xl"
-              title="View all tabs"
-            >
-              ☰
-            </button>
+            <div className="md:hidden flex items-center gap-2">
+              <button
+                onClick={() => setShowTabMenu(!showTabMenu)}
+                className="px-4 py-3 text-slate-700 hover:bg-blue-100 hover:text-blue-600 transition font-bold text-2xl flex-shrink-0"
+                title="View all tabs"
+              >
+                ☰
+              </button>
+              <span className="text-xs text-slate-500">Tabs</span>
+            </div>
 
             {/* Desktop Tabs */}
             <div className="hidden md:flex flex-1 overflow-x-auto scrollbar-hide">
@@ -642,8 +646,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
                   }}
                   className={`py-3 px-4 text-center font-medium transition whitespace-nowrap text-base ${
                     activeTab === tab.toLowerCase().replace(" ", "-")
-                      ? "bg-blue-600 text-white"
-                      : "text-slate-600 hover:bg-slate-50"
+                      ? "border-b-4 border-blue-600 text-blue-600"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   {tab}
@@ -651,9 +655,55 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
               ))}
             </div>
 
-            {/* Mobile Tabs Dropdown */}
-            {showTabMenu && (
-              <div className="absolute top-full left-0 right-0 bg-white border-b border-slate-200 shadow-lg z-50 md:hidden">
+            {/* Mobile Tabs Scroll with Gradient Hint */}
+            <div className="flex md:hidden flex-1 overflow-x-auto scrollbar-hide relative">
+              {[
+                "Overview",
+                "Issues",
+                "ML Readiness",
+                "Features",
+                "Bias",
+                "Advanced",
+                "Recommendations",
+                "Baseline Model",
+              ].map((tab, idx) => (
+                <button
+                  key={tab}
+                  onClick={() => {
+                    setActiveTab(tab.toLowerCase().replace(" ", "-"));
+                    setShowTabMenu(false);
+                  }}
+                  className={`py-3 px-2 text-center font-medium transition whitespace-nowrap text-xs flex-shrink-0 ${
+                    activeTab === tab.toLowerCase().replace(" ", "-")
+                      ? "border-b-2 border-blue-600 text-blue-600"
+                      : "text-slate-600"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+              {/* Right gradient hint for scrolling */}
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none flex items-center justify-end pr-1">
+                <span className="text-slate-400 text-xs font-bold">→</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowInfoGuide(true)}
+              className="px-3 py-3 md:px-4 md:py-4 text-blue-600 hover:bg-blue-50 font-semibold transition border-l text-sm md:text-base whitespace-nowrap flex-shrink-0"
+              title="Open Information Guide"
+            >
+              📖
+            </button>
+          </div>
+
+          {/* Mobile Tabs Dropdown Menu */}
+          {showTabMenu && (
+            <div
+              className="md:hidden bg-white border-b-2 border-blue-600 shadow-lg absolute top-14 left-0 right-0 z-50 max-h-96 overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-col">
                 {[
                   "Overview",
                   "Issues",
@@ -670,55 +720,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ report }) => {
                       setActiveTab(tab.toLowerCase().replace(" ", "-"));
                       setShowTabMenu(false);
                     }}
-                    className={`w-full text-left px-4 py-3 font-medium transition text-sm ${
+                    className={`w-full text-left px-4 py-4 font-medium transition text-sm border-b ${
                       activeTab === tab.toLowerCase().replace(" ", "-")
-                        ? "bg-blue-600 text-white"
-                        : "text-slate-700 hover:bg-slate-100"
+                        ? "bg-blue-100 text-blue-800 border-blue-200"
+                        : "text-slate-700 hover:bg-slate-50 border-slate-100"
                     }`}
                   >
+                    {activeTab === tab.toLowerCase().replace(" ", "-") && "✓ "}
                     {tab}
                   </button>
                 ))}
               </div>
-            )}
-
-            {/* Mobile First Tabs Scroll (fallback for users who know to scroll) */}
-            <div className="flex md:hidden flex-1 overflow-x-auto scrollbar-hide">
-              {[
-                "Overview",
-                "Issues",
-                "ML Readiness",
-                "Features",
-                "Bias",
-                "Advanced",
-                "Recommendations",
-                "Baseline Model",
-              ].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => {
-                    setActiveTab(tab.toLowerCase().replace(" ", "-"));
-                    setShowTabMenu(false);
-                  }}
-                  className={`py-3 px-3 text-center font-medium transition whitespace-nowrap text-xs ${
-                    activeTab === tab.toLowerCase().replace(" ", "-")
-                      ? "bg-blue-600 text-white"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
             </div>
-
-            <button
-              onClick={() => setShowInfoGuide(true)}
-              className="px-3 py-3 md:px-4 md:py-4 text-blue-600 hover:bg-blue-50 font-semibold transition border-l text-sm md:text-base whitespace-nowrap"
-              title="Open Information Guide"
-            >
-              📖 Help & Info
-            </button>
-          </div>
+          )}
+        </div>
 
           <div className="p-4 md:p-8">
             {/* Overview Tab */}
